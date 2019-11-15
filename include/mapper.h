@@ -28,6 +28,18 @@ void Mapper::initialize(const string& filename) {
         exit(EXIT_FAILURE);
     }
 
+    string line;
+    int index = 0;
+    while (getline(in_file, line)){
+        istringstream ss(line);
+        ss >> MapPoint.id;
+        ss >> MapPoint.x;
+        ss >> MapPoint.y;
+        data.push_back(MapPoint)
+        if (debug && index <50)
+        cout << data.back().id << ": " << data.back().x << ": "
+            << data.back().y << endl;
+    }
     // TODO: Complete initialize()
 
     if (in_file.is_open()) {
