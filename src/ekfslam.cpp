@@ -50,6 +50,30 @@ EKFSLAM::EKFSLAM(unsigned int landmark_size,
 // motion - struct with the control input for one time step
 EKFSLAM::Prediction(const OdoReading& motion){
 
+    double angle = mu(2);
+    float r1 = motion.r1;
+    float t  = motion.t;
+    float r2 = motion.r2;
+    //compute the Gtx matrix:
+    MatrixXd Gtx = MatrixXd::Zero(3, 3);
+    Gtx << 1, 0, -t*sin(angle + r1),
+           0, 1, t*cos(angle + r1),
+           0, 0, 1;
+
+    //update mu:
+    mu(0) += t*cos(angle + r1);
+    mu(1) += t*sin(angle + r1);
+    mu(2) += r1 + r1;
+
+    int cols = Sigma.col();
+    //update  covariance matrix:
+    Sigma.topLeftCorner(3, 3) = Gtx * Sigma.topLeftCorner(3, 3) * Gtx.transpose();
+    Sigma.topRightCorner(3, cols - 3) = Gtx * Sigma.topRightCorner(3, cols -3);
+    Sigma.bottomLeftCorner(cols - 3, 3) = Sigma.topRightCorner.transpose();
+    //add motion noise to the covariance matrix:
+    Sigma += R;
+
+
 }
 
 /****** TODO *********/
@@ -57,5 +81,7 @@ EKFSLAM::Prediction(const OdoReading& motion){
 // Inputs:
 // observation - vector containing all observed landmarks from a laser scanner
 EKFSLAM::Correction(const vector<LaserReading>& observation){
+
+    
 
 }
