@@ -11,15 +11,35 @@
 // motion_noise - amount of noise to add due to motion
 EKFSLAM::EKFSLAM(unsigned int landmark_size,
     unsigned int robot_pose_size = 3,
-    float _motion_noise = 0.1){
+    float _motion_noise = 0.1,
+    float _sensor_noise = 0.5){
+
     unsigned int l_size = landmark_size;
     unsigned int r_size = robot_pose_size;
-    float noise = _motion_noise;
+    float motion_noise = _motion_noise;
+    float sensor_noise = _sensor_noise;
     mu          = VectorXd::Zero(2*l_size + r_size, 1);
     Sigma = MatrixXd::Zero(r_size+2*l_size, r_size+2*l_size);
-    robotSigma = MatrixXd::Zero(r_size,r_size);
+    robotSigma = MatrixXd::Zero(r_size, r_size);
     mapSigma = MatrixXd::Zero(2*l_size, 2*l_size);
+    robMapSigma = MatrixXd::Zero(r_size, 2*l_size);
 
+    //write those matrices into the big matrix
+    Sigma.topLeftCorner(r_size, r_size) = robotSigma;
+    Sigma.topRightCorner(r_size, 2*l_size) = robMapSigma;
+    Sigma.bottomLeftCorner(2*l_size, r_size) = robMapSigma.transpose();
+    Sigma.bottomRightCorner(2*l_size, 2*l_size) = mapSigma;
+
+    //iniilize noise matrix:
+    R = MatrixXd::Zero(r_size+2*l_size, r_size+2*l_size);
+    R.topLeftCorner(r_size, r_size) << motion_noise, 0, 0,
+                                       0, motion_noise, 0,
+                                       0, 0, motion_noise;
+
+     Q = MatrixXd::Zero(r_size+2*l_size, r_size+2*l_size);
+     Q.topLeftCorner(r_size, r_size) << sensor_noise, 0, 0,
+                                        0, sensor_noise, 0,
+                                        0, 0, sensor_noise;
 
 
 }

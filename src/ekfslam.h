@@ -40,7 +40,8 @@ class EKFSLAM {
     // motion_noise - amount of noise to add due to motion
     EKFSLAM(unsigned int landmark_size,
         unsigned int robot_pose_size = 3,
-        float _motion_noise = 0.1);
+        float _motion_noise = 0.1,
+        float _sensor_noise = 0.5);
 
     // Standard Destructor
     virtual ~EKFSLAM();
