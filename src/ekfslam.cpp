@@ -87,17 +87,42 @@ EKFSLAM::Prediction(const OdoReading& motion){
 EKFSLAM::Correction(const vector<LaserReading>& observation){
     //iniilize data:
     unsigned int id;
-    float range;
-    float angle;
-    float x;
-    float y;
-    for (const auto&one_observation: observation) {
+    double range;
+    double angle;
+    double x;
+    double y;
+    int observation_size;
+    observation_size = observation.size();
+    Eigen::MatrixXd H;
+    int l_size;
+    l_size = observedLandmarks.size();
+    H = Eigen::MatrixXd::zero(2*observation_size, 2*l_size + 3);
+    //iniilize z matrix
+    Eigen::MatrixXd z, expectedZ;
+    z = MatrixXd::zero(2*observation_size);
+    expectedZ = MatrixXd::zero(2*observation_size);
+    for (size_t i = 0; i < observation_size; i++) {
+      auto& one_observation;
+      one_observation = observation[i];
       id = one_observation.id;
       range = one_observation.range;
       angle = one_observation.bearing;
-      MatrixXd z = MatrixXd::Zero(2, 1);
-      z << range,
-           angle;
+      z(2*i) = range;
+      z(2*i + 1) = angle;
+      //record landmark location if never seen before
+      if (observedLandmarks(id - 1) == 0) {
+        observedLandmarks(id-1) = 1;
+        mu(2*id + 1) = mu(0) + range*cos(angle + mu(2)); //landmark x coordination
+        mu(2*id + 2) = mu(0) + range*sin(angle + mu(2));
+      }
+
+      Eigen::MatrixXd delta;
+      delta << mu(2*id + 1) - mu(0),
+              mu(2*id + 2) - mu(1);
+      double q;
+      q = delta.transpose()*delta; //transpose of a matrix times a matrix is a number for this case
+      expectedZ(2*i) = sqrt(q);
+      expectedZ(2*i+1) = atan(delta(1), delta(0)) - mu(2);
 
     }
 
