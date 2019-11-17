@@ -26,11 +26,11 @@ class EKFSLAM {
     // Noise Matrix due to sensors
     Eigen::MatrixXd Q;
     // Vector of observed landmarks
-    Eigen::VectorXd observedLandmarks;
+    vector<bool> observedLandmarks;
 
  public:
     // Default Constructor
-    EKFSLAM();
+    // EKFSLAM();
 
     /****** TODO *********/
     // Overloaded Constructor
@@ -65,6 +65,9 @@ class EKFSLAM {
 
     MatrixXd getSigma() const {
         return Sigma;
+    }
+    vector<bool> getobservedLandmarks() const {
+        return observedLandmarks;
     }
 };
 

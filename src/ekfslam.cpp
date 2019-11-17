@@ -40,7 +40,9 @@ EKFSLAM::EKFSLAM(unsigned int landmark_size,
           0,  0.5;
   //iniilize a vector to store info about if a certain landmark has been
   //before:
-  observedLandmarks = Eigen::VectorXd::Zero(l_size, 1);
+  for (size_t i = 0; i < l_size; i++) {
+    observedLandmarks.push_back(false);
+  }
 
 }
 
@@ -108,8 +110,8 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
       range = one_observation.range;
       angle = one_observation.bearing;
       //record landmark location if never seen before
-      if (observedLandmarks[id - 1] == 0) {
-        observedLandmarks[id-1] = 1;
+      if (!observedLandmarks[id - 1]) {
+        observedLandmarks[id-1] = true;
         mu(2*id + 1) = mu(0) + range*cos(angle + mu(2)); //landmark x coordination
         mu(2*id + 2) = mu(0) + range*sin(angle + mu(2));
       }
