@@ -157,6 +157,4 @@ EKFSLAM::Correction(const vector<LaserReading>& observation){
     //update:
     mu = cor_mu;
     Sigma = cor_Sigma;
-
-
 }
