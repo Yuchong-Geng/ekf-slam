@@ -26,7 +26,7 @@ class EKFSLAM {
     // Noise Matrix due to sensors
     Eigen::MatrixXd Q;
     // Vector of observed landmarks
-    vector<bool> observedLandmarks;
+    Eigen::VectorXd observedLandmarks;
 
  public:
     // Default Constructor
@@ -40,8 +40,7 @@ class EKFSLAM {
     // motion_noise - amount of noise to add due to motion
     EKFSLAM(unsigned int landmark_size,
         unsigned int robot_pose_size = 3,
-        float _motion_noise = 0.1,
-        float _sensor_noise = 0.5);
+        float _motion_noise = 0.1);
 
     // Standard Destructor
     virtual ~EKFSLAM();

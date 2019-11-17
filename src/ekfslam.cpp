@@ -10,14 +10,13 @@
 // robot_pose_size - number of state variables to track on the robot
 // motion_noise - amount of noise to add due to motion
 EKFSLAM::EKFSLAM(unsigned int landmark_size,
-    unsigned int robot_pose_size = 3,
-    float _motion_noise = 0.1,
-    float _sensor_noise = 0.5){
+    unsigned int robot_pose_size,
+    float _motion_noise){
 
     unsigned int l_size = landmark_size;
     unsigned int r_size = robot_pose_size;
     float motion_noise = _motion_noise;
-    float sensor_noise = _sensor_noise;
+
     mu          = Eigen::VectorXd::Zero(2*l_size + r_size, 1);
     Sigma       = Eigen::MatrixXd::Zero(r_size+2*l_size, r_size+2*l_size);
     robotSigma  = Eigen::MatrixXd::Zero(r_size, r_size);
@@ -39,11 +38,9 @@ EKFSLAM::EKFSLAM(unsigned int landmark_size,
     Q = Eigen::MatrixXd::Zero(2, 2);
     Q << 0.5, 0,
           0,  0.5;
-
-    //iniilize a vector to store info about if a certain landmark has been
-    //before:
-    observedLandmarks = Eigen::VectorXd::Zero(l_size, 1);
-
+  //iniilize a vector to store info about if a certain landmark has been
+  //before:
+  observedLandmarks = Eigen::VectorXd::Zero(l_size, 1);
 
 }
 
@@ -51,7 +48,7 @@ EKFSLAM::EKFSLAM(unsigned int landmark_size,
 // Description: Prediction step for the EKF based off an odometry model
 // Inputs:
 // motion - struct with the control input for one time step
-EKFSLAM::Prediction(const OdoReading& motion){
+void EKFSLAM::Prediction(const OdoReading& motion){
 
     double angle = mu(2);
     float r1 = motion.r1;
@@ -66,16 +63,15 @@ EKFSLAM::Prediction(const OdoReading& motion){
     //update mu:
     mu(0) += t*cos(angle + r1);
     mu(1) += t*sin(angle + r1);
-    mu(2) += r1 + r1;
+    mu(2) += r1 + r2;
 
-    int cols = Sigma.col();
+    int cols = Sigma.cols();
     //update  covariance matrix:
     Sigma.topLeftCorner(3, 3) = Gtx * Sigma.topLeftCorner(3, 3) * Gtx.transpose();
     Sigma.topRightCorner(3, cols - 3) = Gtx * Sigma.topRightCorner(3, cols -3);
-    Sigma.bottomLeftCorner(cols - 3, 3) = Sigma.topRightCorner.transpose();
+    Sigma.bottomLeftCorner(cols - 3, 3) = Sigma.topRightCorner(3, cols-3).transpose();
     //add motion noise to the covariance matrix:
     Sigma += R;
-    return mu, Sigma;
 
 }
 
@@ -83,13 +79,11 @@ EKFSLAM::Prediction(const OdoReading& motion){
 // Description: Correction step for EKF
 // Inputs:
 // observation - vector containing all observed landmarks from a laser scanner
-EKFSLAM::Correction(const vector<LaserReading>& observation){
+void EKFSLAM::Correction(const vector<LaserReading>& observation){
     //iniilize data:
     unsigned int id;
     double range;
     double angle;
-    double x;
-    double y;
     int observation_size;
     observation_size = observation.size();
     Eigen::MatrixXd H;
@@ -103,20 +97,19 @@ EKFSLAM::Correction(const vector<LaserReading>& observation){
     cor_Sigma = Sigma;
     //identity matrix for updating covariance matrix Sigma:
     Eigen::MatrixXd identity;
-    identity = Eigen::MatrixXd::identity(2*l_size + 3, 2*l_size + 3);
+    identity = Eigen::MatrixXd::Identity(2*l_size + 3, 2*l_size + 3);
     //iniilize z matrix
     Eigen::MatrixXd z, expectedZ;
     z = MatrixXd::Zero(3+2*l_size, 1);
     expectedZ = MatrixXd::Zero(3+2*l_size, 1);
-    for (size_t i = 0; i < observation_size; i++) {
-      auto& one_observation;
-      one_observation = observation[i];
+    for (int i = 0; i < observation_size; i++) {
+      auto& one_observation = observation[i];
       id = one_observation.id;
       range = one_observation.range;
       angle = one_observation.bearing;
       //record landmark location if never seen before
-      if (observedLandmarks(id - 1) == 0) {
-        observedLandmarks(id-1) = 1;
+      if (!observedLandmarks[id - 1]) {
+        observedLandmarks[id-1] = 1;
         mu(2*id + 1) = mu(0) + range*cos(angle + mu(2)); //landmark x coordination
         mu(2*id + 2) = mu(0) + range*sin(angle + mu(2));
       }
@@ -128,10 +121,10 @@ EKFSLAM::Correction(const vector<LaserReading>& observation){
       delta << mu(2*id + 1) - mu(0),
               mu(2*id + 2) - mu(1);
       double q;
-      q = delta.transpose()*delta; //transpose of a matrix times a matrix is a number for this case
+      q = pow(delta(0), 2) + pow(delta(1), 2); //transpose of a matrix times a matrix is a number for this case
       //add calculated value of reading to the expectedZ matrix:
       expectedZ(2*i) = sqrt(q);
-      expectedZ(2*i+1) = atan(delta(1), delta(0)) - mu(2);
+      expectedZ(2*i+1) = atan2(delta(1), delta(0)) - mu(2);
       //calculate H matrix:
       //iniilize F matrix first:
       Eigen::MatrixXd F;
