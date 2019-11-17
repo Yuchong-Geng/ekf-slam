@@ -108,7 +108,7 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
       range = one_observation.range;
       angle = one_observation.bearing;
       //record landmark location if never seen before
-      if (!observedLandmarks[id - 1]) {
+      if (observedLandmarks[id - 1] == 0) {
         observedLandmarks[id-1] = 1;
         mu(2*id + 1) = mu(0) + range*cos(angle + mu(2)); //landmark x coordination
         mu(2*id + 2) = mu(0) + range*sin(angle + mu(2));
