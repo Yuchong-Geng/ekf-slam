@@ -46,6 +46,11 @@ EKFSLAM::EKFSLAM(unsigned int landmark_size,
 
 }
 
+/**
+* Destructor.
+*/
+EKFSLAM::~EKFSLAM() {}
+
 /****** TODO *********/
 // Description: Prediction step for the EKF based off an odometry model
 // Inputs:
