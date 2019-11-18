@@ -47,14 +47,16 @@ int main(int arc, char* argv[])
     MeasurementPackage measurements;
     measurements.initialize(in_sensor_name);
     cout << measurements.data.size() << endl;
-
     Draw draw;
 
     EKFSLAM ekfslam(mapper.data.size());
     // ekfslam(mapper.data.size());
     for (unsigned int i = 0; i < measurements.data.size(); i++) {
         const auto& record = measurements.data[i];
-        draw.Clear();
+        if (i > 0) {
+          draw.Clear();
+        }
+        // draw.Clear();
         ekfslam.Prediction(record.odo);
         ekfslam.Correction(record.scans);
         draw.Plot_State(ekfslam.getMu(), ekfslam.getSigma(), mapper, ekfslam.getobservedLandmarks(), record.scans);

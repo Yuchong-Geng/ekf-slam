@@ -115,26 +115,29 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
       range = one_observation.range;
       angle = one_observation.bearing;
       //record landmark location if never seen before
-      if (!observedLandmarks[id - 1]) {
-        observedLandmarks[id-1] = true;
+      if (!observedLandmarks.at(id - 1)) {
+        observedLandmarks.at(id-1) = true;
         mu(2*id + 1) = mu(0) + range*cos(angle + mu(2)); //landmark x coordination
         mu(2*id + 2) = mu(0) + range*sin(angle + mu(2));
       }
       //add acutal readings to z matrix:
       z(2*i) = range;
       z(2*i+1) = angle;
-
       Eigen::MatrixXd delta;
+      delta = Eigen::MatrixXd::Zero(2, 1);
       delta << mu(2*id + 1) - mu(0),
               mu(2*id + 2) - mu(1);
+      // std::cout << "after delta" << '\n';
       double q;
       q = pow(delta(0), 2) + pow(delta(1), 2); //transpose of a matrix times a matrix is a number for this case
+      // std::cout << "after q" << '\n';
       //add calculated value of reading to the expectedZ matrix:
       expectedZ(2*i) = sqrt(q);
       expectedZ(2*i+1) = atan2(delta(1), delta(0)) - mu(2);
       //calculate H matrix:
       //iniilize F matrix first:
       Eigen::MatrixXd F;
+      // std::cout << "at F" << '\n';
       F = Eigen::MatrixXd::Zero(5, 3 + 2*l_size);
       F.block<3,3>(0,0) << 1, 0, 0,
                            0, 1, 0,
@@ -142,14 +145,18 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
       F.block<2,2>(3, 1+2*id) << 1, 0,
                                  0, 1;
       Eigen::MatrixXd before_H;
+      before_H = Eigen::MatrixXd::Zero(2, 5);
       before_H << -sqrt(q)*delta(0)/q, -sqrt(q)*delta(1)/q, 0, sqrt(q)*delta(0)/q, sqrt(q)*delta(1)/q,
                   delta(1)/q,          -delta(0)/q,        -1, -delta(1)/q,        delta(0)/q;
       H = before_H * F;
+      // std::cout << "after H * F" << '\n';
       //kalman gain:
       Eigen::MatrixXd K;
       K = Eigen::MatrixXd::Zero(3+2*l_size, 2);
       K = Sigma * H.transpose() * (H*Sigma*H.transpose() + Q).inverse();
+      // std::cout << "after K" << '\n';
       cor_mu += K * (z - expectedZ);
+      std::cout << "after cor_mu" << '\n';
       cor_Sigma = (identity - K * H) * cor_Sigma;
 
     }
