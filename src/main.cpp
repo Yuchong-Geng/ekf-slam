@@ -53,9 +53,7 @@ int main(int arc, char* argv[])
     // ekfslam(mapper.data.size());
     for (unsigned int i = 0; i < measurements.data.size(); i++) {
         const auto& record = measurements.data[i];
-        if (i > 0) {
-          draw.Clear();
-        }
+        draw.Clear();
         // draw.Clear();
         ekfslam.Prediction(record.odo);
         ekfslam.Correction(record.scans);

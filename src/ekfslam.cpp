@@ -107,8 +107,8 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
     identity = Eigen::MatrixXd::Identity(2*l_size + 3, 2*l_size + 3);
     //iniilize z matrix
     Eigen::MatrixXd z, expectedZ;
-    z = MatrixXd::Zero(3+2*l_size, 1);
-    expectedZ = MatrixXd::Zero(3+2*l_size, 1);
+    z = MatrixXd::Zero(2, 1);
+    expectedZ = MatrixXd::Zero(2, 1);
     for (int i = 0; i < observation_size; i++) {
       auto& one_observation = observation[i];
       id = one_observation.id;
@@ -121,8 +121,8 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
         mu(2*id + 2) = mu(0) + range*sin(angle + mu(2));
       }
       //add acutal readings to z matrix:
-      z(2*i) = range;
-      z(2*i+1) = angle;
+      z(0) = range;
+      z(1) = angle;
       Eigen::MatrixXd delta;
       delta = Eigen::MatrixXd::Zero(2, 1);
       delta << mu(2*id + 1) - mu(0),
@@ -132,8 +132,8 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
       q = pow(delta(0), 2) + pow(delta(1), 2); //transpose of a matrix times a matrix is a number for this case
       // std::cout << "after q" << '\n';
       //add calculated value of reading to the expectedZ matrix:
-      expectedZ(2*i) = sqrt(q);
-      expectedZ(2*i+1) = atan2(delta(1), delta(0)) - mu(2);
+      expectedZ(0) = sqrt(q);
+      expectedZ(1) = atan2(delta(1), delta(0)) - mu(2);
       //calculate H matrix:
       //iniilize F matrix first:
       Eigen::MatrixXd F;
@@ -155,6 +155,10 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
       K = Eigen::MatrixXd::Zero(3+2*l_size, 2);
       K = Sigma * H.transpose() * (H*Sigma*H.transpose() + Q).inverse();
       // std::cout << "after K" << '\n';
+      std::cout << K.rows() << '\n';
+      std::cout << K.cols() << '\n';
+      std::cout << (z - expectedZ).rows() << '\n';
+      std::cout << (z - expectedZ).cols() << '\n';
       cor_mu += K * (z - expectedZ);
       std::cout << "after cor_mu" << '\n';
       cor_Sigma = (identity - K * H) * cor_Sigma;
