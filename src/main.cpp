@@ -46,18 +46,19 @@ int main(int arc, char* argv[])
     //read the measurements with odometry and radar data
     MeasurementPackage measurements;
     measurements.initialize(in_sensor_name);
-    cout << measurements.data.size() << endl;
+    // cout << measurements.data.size() << endl;
     Draw draw;
 
     EKFSLAM ekfslam(mapper.data.size());
     // ekfslam(mapper.data.size());
     for (unsigned int i = 0; i < measurements.data.size(); i++) {
         const auto& record = measurements.data[i];
-        draw.Clear();
         // draw.Clear();
+        draw.Clear();
         ekfslam.Prediction(record.odo);
         ekfslam.Correction(record.scans);
         draw.Plot_State(ekfslam.getMu(), ekfslam.getSigma(), mapper, ekfslam.getobservedLandmarks(), record.scans);
+        draw.Show();
         draw.Pause();
         stringstream ss;
         ss << setfill('0') << setw(3) << i;

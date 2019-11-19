@@ -114,6 +114,13 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
       id = one_observation.id;
       range = one_observation.range;
       angle = one_observation.bearing;
+      //normalize angle if out of range:
+      if (angle > 3.14) {
+        angle = -3.14 + angle - 3.14;
+      }
+      if (angle < -3.14) {
+        angle = 3.14 - (angle - 3.14);
+      }
       //record landmark location if never seen before
       if (!observedLandmarks.at(id - 1)) {
         observedLandmarks.at(id-1) = true;
@@ -155,10 +162,10 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
       K = Eigen::MatrixXd::Zero(3+2*l_size, 2);
       K = Sigma * H.transpose() * (H*Sigma*H.transpose() + Q).inverse();
       // std::cout << "after K" << '\n';
-      std::cout << K.rows() << '\n';
-      std::cout << K.cols() << '\n';
-      std::cout << (z - expectedZ).rows() << '\n';
-      std::cout << (z - expectedZ).cols() << '\n';
+      // std::cout << K.rows() << '\n';
+      // std::cout << K.cols() << '\n';
+      // std::cout << (z - expectedZ).rows() << '\n';
+      // std::cout << (z - expectedZ).cols() << '\n';
       cor_mu += K * (z - expectedZ);
       std::cout << "after cor_mu" << '\n';
       cor_Sigma = (identity - K * H) * cor_Sigma;
