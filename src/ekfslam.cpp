@@ -33,11 +33,11 @@ EKFSLAM::EKFSLAM(unsigned int landmark_size,
     R = Eigen::MatrixXd::Zero(r_size+2*l_size, r_size+2*l_size);
     R.topLeftCorner(r_size, r_size) << motion_noise, 0, 0,
                                        0, motion_noise, 0,
-                                       0, 0, motion_noise;
+                                       0, 0, 15*motion_noise;
 
     Q = Eigen::MatrixXd::Zero(2, 2);
-    Q << 0.5, 0,
-          0,  0.5;
+    Q << 0.7, 0,
+          0,  0.7;
   //iniilize a vector to store info about if a certain landmark has been
   //before:
   // for (size_t i = 0; i < l_size; i++) {
@@ -121,7 +121,7 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
         angle = -3.14 + angle - 3.14;
       }
       if (angle < -3.14) {
-        angle = 3.14 - (angle - 3.14);
+        angle = 3.14 + (angle + 3.14);
       }
       //record landmark location if never seen before
       if (!observedLandmarks.at(id - 1)) {
@@ -172,6 +172,13 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
       // std::cout << (z - expectedZ).rows() << '\n';
       // std::cout << (z - expectedZ).cols() << '\n';
       cor_mu += K * (z - expectedZ);
+      //normalize angle if out of range:
+      if (cor_mu(2)> 3.14) {
+        cor_mu(2) = -3.14 + cor_mu(2) - 3.14;
+      }
+      if (cor_mu(2) < -3.14) {
+        cor_mu(2) = 3.14 + (cor_mu(2) + 3.14);
+      }
 
       cor_Sigma = (identity - K * H) * cor_Sigma;
 
