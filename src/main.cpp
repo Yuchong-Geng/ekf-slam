@@ -49,20 +49,34 @@ int main(int arc, char* argv[])
     // cout << measurements.data.size() << endl;
     Draw draw;
 
-    EKFSLAM ekfslam(mapper.data.size());
+    EKFSLAM ekfslam(mapper.data.size(), 3);
     // ekfslam(mapper.data.size());
     for (unsigned int i = 0; i < measurements.data.size(); i++) {
         const auto& record = measurements.data[i];
         // draw.Clear();
-        draw.Clear();
+
         ekfslam.Prediction(record.odo);
         ekfslam.Correction(record.scans);
-        draw.Plot_State(ekfslam.getMu(), ekfslam.getSigma(), mapper, ekfslam.getobservedLandmarks(), record.scans);
-        draw.Show();
-        draw.Pause();
+        //------------------------------for debug:
+        // for (int matrix = 0; matrix < ekfslam.getMu().size(); matrix++) {
+        //   std::cout << ekfslam.getMu()(matrix) << '\n';}
+        std::cout << i << "running" << '\n';
+        ////////////////////////for debug:
+        if (i == 330) {
+          draw.Plot_State(ekfslam.getMu(), ekfslam.getSigma(), mapper, ekfslam.getobservedLandmarks(), record.scans);
+          draw.Show();
+          //------------------------------for debug:
+          // for (int matrix = 0; matrix < ekfslam.getMu().size(); matrix++) {
+          //   std::cout << ekfslam.getMu()(matrix) << '\n';}
+
+          }
+
+        // draw.Plot_State(ekfslam.getMu(), ekfslam.getSigma(), mapper, ekfslam.getobservedLandmarks(), record.scans);
+        // draw.Show();
+        // draw.Pause();
         stringstream ss;
         ss << setfill('0') << setw(3) << i;
-        draw.Save("../images/"+ss.str());
+        // draw.Save("/workspace/images/"+ss.str());
 }
-draw.Show();
+// draw.Show();
 }

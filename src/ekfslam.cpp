@@ -40,9 +40,11 @@ EKFSLAM::EKFSLAM(unsigned int landmark_size,
           0,  0.5;
   //iniilize a vector to store info about if a certain landmark has been
   //before:
-  for (size_t i = 0; i < l_size; i++) {
-    observedLandmarks.push_back(false);
-  }
+  // for (size_t i = 0; i < l_size; i++) {
+  //   observedLandmarks.push_back(false);
+  // }
+  observedLandmarks.resize(l_size);
+  fill(observedLandmarks.begin(), observedLandmarks.end(), false);
 
 }
 
@@ -76,7 +78,7 @@ void EKFSLAM::Prediction(const OdoReading& motion){
     //update  covariance matrix:
     Sigma.topLeftCorner(3, 3) = Gtx * Sigma.topLeftCorner(3, 3) * Gtx.transpose();
     Sigma.topRightCorner(3, cols - 3) = Gtx * Sigma.topRightCorner(3, cols -3);
-    Sigma.bottomLeftCorner(cols - 3, 3) = Sigma.topRightCorner(3, cols-3).transpose();
+    Sigma.bottomLeftCorner(cols - 3, 3) = (Gtx*Sigma.topRightCorner(3, cols-3)).transpose();
     //add motion noise to the covariance matrix:
     Sigma += R;
 
@@ -124,23 +126,26 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
       //record landmark location if never seen before
       if (!observedLandmarks.at(id - 1)) {
         observedLandmarks.at(id-1) = true;
-        mu(2*id + 1) = mu(0) + range*cos(angle + mu(2)); //landmark x coordination
-        mu(2*id + 2) = mu(0) + range*sin(angle + mu(2));
+        cor_mu(2*id + 1) = cor_mu(0) + range*cos(angle + mu(2)); //landmark x coordination
+        cor_mu(2*id + 2) = cor_mu(1) + range*sin(angle + mu(2));
+        // std::cout << "x " << mu(2*id + 1) << '\n';
+        // std::cout << "y " << mu(2*id + 2) << '\n';
+
       }
       //add acutal readings to z matrix:
       z(0) = range;
       z(1) = angle;
       Eigen::MatrixXd delta;
       delta = Eigen::MatrixXd::Zero(2, 1);
-      delta << mu(2*id + 1) - mu(0),
-              mu(2*id + 2) - mu(1);
+      delta << cor_mu(2*id + 1) - cor_mu(0),
+              cor_mu(2*id + 2) - cor_mu(1);
       // std::cout << "after delta" << '\n';
       double q;
       q = pow(delta(0), 2) + pow(delta(1), 2); //transpose of a matrix times a matrix is a number for this case
       // std::cout << "after q" << '\n';
       //add calculated value of reading to the expectedZ matrix:
       expectedZ(0) = sqrt(q);
-      expectedZ(1) = atan2(delta(1), delta(0)) - mu(2);
+      expectedZ(1) = atan2(delta(1), delta(0)) - cor_mu(2);
       //calculate H matrix:
       //iniilize F matrix first:
       Eigen::MatrixXd F;
@@ -160,14 +165,14 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
       //kalman gain:
       Eigen::MatrixXd K;
       K = Eigen::MatrixXd::Zero(3+2*l_size, 2);
-      K = Sigma * H.transpose() * (H*Sigma*H.transpose() + Q).inverse();
+      K = Sigma * H.transpose() * (H*Sigma*(H.transpose()) + Q).inverse();
       // std::cout << "after K" << '\n';
       // std::cout << K.rows() << '\n';
       // std::cout << K.cols() << '\n';
       // std::cout << (z - expectedZ).rows() << '\n';
       // std::cout << (z - expectedZ).cols() << '\n';
       cor_mu += K * (z - expectedZ);
-      std::cout << "after cor_mu" << '\n';
+
       cor_Sigma = (identity - K * H) * cor_Sigma;
 
     }
