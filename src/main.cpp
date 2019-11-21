@@ -74,8 +74,6 @@ int main(int arc, char* argv[])
         draw.Plot_State(ekfslam.getMu(), ekfslam.getSigma(), mapper, ekfslam.getobservedLandmarks(), record.scans);
         // draw.Show();
         // draw.Pause();
-        // stringstream ss;
-        // ss << setfill('0') << setw(3) << i;
         draw.Save("/workspace/images/" + std::to_string(i) + ".png");
 }
 // draw.Show();
