@@ -49,7 +49,7 @@ int main(int arc, char* argv[])
     // cout << measurements.data.size() << endl;
     Draw draw;
 
-    EKFSLAM ekfslam(mapper.data.size(), 3);
+    EKFSLAM ekfslam(mapper.data.size(), 3, 0);
     // ekfslam(mapper.data.size());
     for (unsigned int i = 0; i < measurements.data.size(); i++) {
         const auto& record = measurements.data[i];

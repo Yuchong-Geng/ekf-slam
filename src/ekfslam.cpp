@@ -33,11 +33,11 @@ EKFSLAM::EKFSLAM(unsigned int landmark_size,
     R = Eigen::MatrixXd::Zero(r_size+2*l_size, r_size+2*l_size);
     R.topLeftCorner(r_size, r_size) << motion_noise, 0, 0,
                                        0, motion_noise, 0,
-                                       0, 0, 15*motion_noise;
+                                       0, 0, motion_noise/10;
 
     Q = Eigen::MatrixXd::Zero(2, 2);
-    Q << 0.7, 0,
-          0,  0.7;
+    Q << 0.8, 0,
+          0,  0.8;
   //iniilize a vector to store info about if a certain landmark has been
   //before:
   // for (size_t i = 0; i < l_size; i++) {
