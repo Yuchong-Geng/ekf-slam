@@ -5,9 +5,10 @@
 #include "../include/mapper.h"
 #include<iomanip>
 
-//check input arguemnts:
+
 using namespace std;
 
+//check input arguemnts:
 void check_arguments(int argc, char* argv[]) {
   string usage_instructions = "Usage instruction: ";
   usage_instructions += argv[0];
@@ -51,6 +52,7 @@ int main(int arc, char* argv[])
 
     EKFSLAM ekfslam(mapper.data.size(), 3, 0.01);
     // ekfslam(mapper.data.size());
+    //iterate dataset and feed them into EKFSLAM
     for (unsigned int i = 0; i < measurements.data.size(); i++) {
         const auto& record = measurements.data[i];
         draw.Clear();
@@ -62,14 +64,14 @@ int main(int arc, char* argv[])
         //   std::cout << ekfslam.getMu()(matrix) << '\n';}
         std::cout << i << "running" << '\n';
         ////////////////////////for debug:
-        if (i == 331) {
-          draw.Plot_State(ekfslam.getMu(), ekfslam.getSigma(), mapper, ekfslam.getobservedLandmarks(), record.scans);
-          draw.Show();
-          //------------------------------for debug:
-          // for (int matrix = 0; matrix < ekfslam.getMu().size(); matrix++) {
-          //   std::cout << ekfslam.getMu()(matrix) << '\n';}
-
-          }
+        // if (i == 330) {
+        //   draw.Plot_State(ekfslam.getMu(), ekfslam.getSigma(), mapper, ekfslam.getobservedLandmarks(), record.scans);
+        //   draw.Show();
+        //   //------------------------------for debug:
+        //   // for (int matrix = 0; matrix < ekfslam.getMu().size(); matrix++) {
+        //   //   std::cout << ekfslam.getMu()(matrix) << '\n';}
+        //
+        //   }
 
         draw.Plot_State(ekfslam.getMu(), ekfslam.getSigma(), mapper, ekfslam.getobservedLandmarks(), record.scans);
         // draw.Show();
