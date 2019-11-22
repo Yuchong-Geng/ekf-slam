@@ -20,8 +20,9 @@ EKFSLAM::EKFSLAM(unsigned int landmark_size,
     mu          = Eigen::VectorXd::Zero(2*l_size + r_size, 1);
     Sigma       = Eigen::MatrixXd::Zero(r_size+2*l_size, r_size+2*l_size);
     robotSigma  = Eigen::MatrixXd::Zero(r_size, r_size);
-    mapSigma    = Eigen::MatrixXd::Zero(2*l_size, 2*l_size);
+    mapSigma    = Eigen::MatrixXd::Identity(2*l_size, 2*l_size);
     robMapSigma = Eigen::MatrixXd::Zero(r_size, 2*l_size);
+
 
     //write those matrices into the big matrix
     Sigma.topLeftCorner(r_size, r_size) = robotSigma;
@@ -31,8 +32,9 @@ EKFSLAM::EKFSLAM(unsigned int landmark_size,
 
     //iniilize noise matrix:
     R = Eigen::MatrixXd::Zero(r_size+2*l_size, r_size+2*l_size);
-    R.topLeftCorner(2, 2) << motion_noise, 0,
-                             0, motion_noise;
+    R.topLeftCorner(3, 3) << motion_noise, 0, 0,
+                             0, motion_noise, 0,
+                             0, 0, motion_noise;
 
     Q = Eigen::MatrixXd::Zero(2, 2);
     Q << 0.8, 0,
@@ -75,11 +77,12 @@ void EKFSLAM::Prediction(const OdoReading& motion){
 
     int cols = Sigma.cols();
     //update  covariance matrix:
-    Sigma.topLeftCorner(3, 3) = Gtx * Sigma.topLeftCorner(3, 3) * Gtx.transpose();
+    Sigma.topLeftCorner(3, 3) = Gtx * Sigma.topLeftCorner(3,3) * Gtx.transpose();
     Sigma.topRightCorner(3, cols - 3) = Gtx * Sigma.topRightCorner(3, cols -3);
     Sigma.bottomLeftCorner(cols - 3, 3) = (Gtx*Sigma.topRightCorner(3, cols-3)).transpose();
     //add motion noise to the covariance matrix:
     Sigma += R;
+    std::cout << Sigma << '\n';
 
 }
 
@@ -107,8 +110,9 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
     Eigen::MatrixXd identity;
     identity = Eigen::MatrixXd::Identity(2*l_size + 3, 2*l_size + 3);
     //iniilize z matrix
-    Eigen::MatrixXd z, expectedZ;
+    Eigen::MatrixXd z, expectedZ, z_diff;
     z = MatrixXd::Zero(2, 1);
+    z_diff = MatrixXd::Zero(2,1);
     expectedZ = MatrixXd::Zero(2, 1);
     for (int i = 0; i < observation_size; i++) {
       auto& one_observation = observation[i];
@@ -170,7 +174,16 @@ void EKFSLAM::Correction(const vector<LaserReading>& observation){
       // std::cout << K.cols() << '\n';
       // std::cout << (z - expectedZ).rows() << '\n';
       // std::cout << (z - expectedZ).cols() << '\n';
-      cor_mu += K * (z - expectedZ);
+      //seperate z_diff to normalize angle:
+      z_diff = z - expectedZ;
+      //normalize angle if out of range:
+      if (z_diff(1) > 3.14) {
+        z_diff(1) = -3.14 + z_diff(1) - 3.14;
+      }
+      if (z_diff(1) < -3.14) {
+        z_diff(1) = 3.14 + (z_diff(1) + 3.14);
+      }
+      cor_mu += K * z_diff;
       //normalize angle if out of range:
       if (cor_mu(2)> 3.14) {
         cor_mu(2) = -3.14 + cor_mu(2) - 3.14;
